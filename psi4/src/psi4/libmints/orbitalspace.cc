@@ -285,4 +285,9 @@ OrbitalSpace OrbitalSpace::build_ri_space(const std::shared_ptr<Molecule> &molec
     return orthogonalize("p'", "RIBS", combined, lindep_tol);
 }
 
+OrbitalSpace OrbitalSpace::cheap_ri_space(std::shared_ptr<BasisSet> ri_basis, double lindep_tol) {
+
+   return orthogonalize("p'", "RIBS", ri_basis, lindep_tol);
+}
+
 }  // namespace psi

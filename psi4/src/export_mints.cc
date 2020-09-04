@@ -1168,7 +1168,12 @@ void export_mints(py::module& m) {
                     The second argument, obs_key, is the option keyword for orbital basis set 'BASIS' \
                     The third argument, aux_key, is the option keyword for auxiliery basis set 'DF_BASIS_MP2' \
                     The fourth argument, lindep_tol, is the tolerance for linear dependencies",
-                    "molecule"_a, "obs_key"_a, "aux_key"_a, "lindep_tol"_a);
+                    "molecule"_a, "obs_key"_a, "aux_key"_a, "lindep_tol"_a)
+        .def_static("cheap_ri_space", &OrbitalSpace::cheap_ri_space,
+                    "Easy workaround to get RI-space, same objective as build_ri_space; \
+		    probably similar to what build_abs_space was once upon a time",
+                    "ri_basis"_a, "lindep_tol"_a);
+
 
     py::class_<PointGroup, std::shared_ptr<PointGroup>>(m, "PointGroup", "Contains information about the point group")
         .def(py::init<const std::string&>())

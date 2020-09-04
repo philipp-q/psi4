@@ -132,6 +132,12 @@ class PSI_API OrbitalSpace {
     static OrbitalSpace build_ri_space(const std::shared_ptr<Molecule>& molecule, const std::string& obs_key,
                                        const std::string& aux_key, double lindep_tol);
 
+    /** Easy workaround to get RI-space, same objective as build_ri_space; probably exaclty same as build_abs_space was once upon a time
+     * \param BasisSet ri_basis; for CABS+ approach, provide union of OBS + desired CABS
+     * \param lindep_tol The tolerance for linear dependencies
+     */
+    static OrbitalSpace cheap_ri_space(std::shared_ptr<BasisSet> ri_basis, double lindep_tol);
+
     /** Given a basis set, it orthogonalizes the orbitals and returns a space with the same
      * span but orthogonal orbitals. Also, linear dependent orbitals are projected out.
      * \param aux_bs The basis to orthogonalize

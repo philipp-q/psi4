@@ -184,7 +184,8 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
     See :ref:`Cross-module Redundancies <table:managedmethods>` for details. -*/
     options.add_str("MP2_TYPE", "DF", "DF CONV CD");
     /*- Algorithm to use for MPn ( $n>2$ ) computation (e.g., MP3 or MP2.5 or MP4(SDQ)).
-    See :ref:`Cross-module Redundancies <table:managedmethods>` for details. -*/
+    See :ref:`Cross-module Redundancies <table:managedmethods>` for details.
+    Since v1.4, default for non-orbital-optimized MP2.5 and MP3 is DF. -*/
     options.add_str("MP_TYPE", "CONV", "DF CONV CD");
     // The type of integrals to use in coupled cluster computations. DF activates density fitting for the largest
     // integral files, while CONV results in no approximations being made.
@@ -252,6 +253,21 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
     /*- How many NOONS to print -- used in libscf_solver/uhf.cc and libmints/oeprop.cc -*/
     options.add_str("PRINT_NOONS", "3");
 
+    ///MBIS Options (libmints/oeprop.cc)
+
+    /*- Maximum Number of MBIS Iterations -*/
+    options.add_int("MBIS_MAXITER", 500);
+    /*- MBIS Convergence Criteria -*/
+    options.add_double("MBIS_D_CONVERGENCE", 1.0e-8);
+    /*- MBIS Number of Radial Points -*/
+    /*- Additional Radial and/or Spherical Points may be needed for Heavier Atoms (200-300) like Zinc -*/
+    options.add_int("MBIS_RADIAL_POINTS", 75);
+    /*- MBIS Number of Spherical Points -*/
+    options.add_int("MBIS_SPHERICAL_POINTS", 302);
+    /*- Pruning scheme for MBIS Grid -*/
+    options.add_str("MBIS_PRUNING_SCHEME", "ROBUST", 
+                    "ROBUST TREUTLER NONE FLAT P_GAUSSIAN D_GAUSSIAN P_SLATER D_SLATER LOG_GAUSSIAN LOG_SLATER NONE");
+
     /*- PCM boolean for pcmsolver module -*/
     options.add_bool("PCM", false);
     if (name == "PCM" || options.read_globals()) {
@@ -287,6 +303,13 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         /*- Thole damping factor for multipole fields -*/
         options.add_double("DAMPING_FACTOR_MULTIPOLE", 2.1304);
 
+        /*- Summation scheme for field computations, can be direct or fmm -*/
+        options.add_str_i("SUMMATION_FIELDS", "DIRECT", "DIRECT FMM");
+        /*- Expansion order of the multipoles for FMM -*/
+        options.add_int("TREE_EXPANSION_ORDER", 5);
+        /*- Opening angle theta -*/
+        options.add_double("TREE_THETA", 0.5);
+
         /*- Activate border options for sites in proximity to the QM/MM border -*/
         options.add_bool("BORDER", false);
         /*- border type, either remove or redistribute moments/polarizabilities -*/
@@ -305,6 +328,9 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         options.add_int("BORDER_N_REDIST", -1);
         /*- redistribute polarizabilities? If false, polarizabilities are removed (default) -*/
         options.add_bool("BORDER_REDIST_POL", false);
+
+        /*- use PE(ECP) repulsive potentials -*/
+        options.add_bool("PE_ECP", false);
     }
 
     if (name == "DETCI" || options.read_globals()) {
@@ -1618,10 +1644,10 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         /*- Verbosity level in TDSCF -*/
         options.add_int("TDSCF_PRINT", 1);
 
-        /*- combine omega exchange and Hartree--Fock exchange into 
-              one matrix for efficiency? 
-            Default is True for MemDFJK 
-              (itself the default for |globals__scf_type| DF), 
+        /*- combine omega exchange and Hartree--Fock exchange into
+              one matrix for efficiency?
+            Default is True for MemDFJK
+              (itself the default for |globals__scf_type| DF),
             False otherwise as not yet implemented. -*/
         options.add_bool("WCOMBINE", false);
     }
@@ -2786,7 +2812,7 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         /*- Do apply DIIS extrapolation? -*/
         options.add_bool("DO_DIIS", true);
         /*- Do compute CC Lambda energy? In order to this option to be valid one should use "TPDM_ABCD_TYPE = COMPUTE"
-         * option. -*/
+        option. -*/
         options.add_bool("CCL_ENERGY", false);
         /*- Do compute OCC poles for ionization potentials? Only valid OMP2. -*/
         options.add_bool("IP_POLES", false);
@@ -2868,8 +2894,11 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         options.add_double("E3_SCALE", 0.25);
         /*- OO scaling factor used in MSD -*/
         options.add_double("OO_SCALE", 0.01);
-        /*- Convergence criterion for residual vector of preconditioned conjugate gradient method. -*/
-        options.add_double("PCG_CONVERGENCE", 1e-6);
+        /*- Convergence criterion for residual vector of preconditioned conjugate gradient method.
+        If this keyword is not set by the user, DFOCC will estimate and use a value required to achieve
+        |dfocc__r_convergence| residual convergence. The listed default will be used for the default value
+        of |dfocc__r_convergence|. -*/
+        options.add_double("PCG_CONVERGENCE", 1e-7);
         /*- Regularization parameter -*/
         options.add_double("REG_PARAM", 0.4);
         /*- tolerance for Cholesky decomposition of the ERI tensor -*/
@@ -3032,8 +3061,10 @@ int read_options(const std::string &name, Options &options, bool suppress_printi
         options.add_int("DIIS_MAX_VECS", 8);
         /*- Do use low memory option for triples contribution? Note that this
             option is enabled automatically if the memory requirements of the
-            conventional algorithm would exceed the available resources -*/
-        options.add_bool("TRIPLES_LOW_MEMORY", false);
+            conventional algorithm would exceed the available resources.
+            The low memory algorithm is faster in general and has been turned
+            on by default starting September 2020. -*/
+        options.add_bool("TRIPLES_LOW_MEMORY", true);
         /*- Do compute triples contribution? !expert -*/
         options.add_bool("COMPUTE_TRIPLES", true);
         /*- Do compute MP4 triples contribution? !expert -*/
